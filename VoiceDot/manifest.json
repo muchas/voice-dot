@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+  "name": "VoiceDot",
+  "description": "Speech recognition for text typing.",
+  "version": "1.0",
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["app.bundle.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
