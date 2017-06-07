@@ -9,10 +9,11 @@ import Data.Aeson hiding (json)
 import  Data.Monoid ((<>))
 import  Data.Text (Text, pack)
 import  GHC.Generics
+import Lib
 
 
 data Transcript = Transcript
-  { t :: Text
+  { t :: String
   } deriving (Generic, Show)
 
 instance ToJSON Transcript
@@ -32,4 +33,4 @@ app =
     do
        post root $ do
          theTranscript <- jsonBody' :: ApiAction Transcript
-         text (t theTranscript)
+         text (pack $ processTranscript $ t theTranscript)
