@@ -10,18 +10,29 @@ import  Data.Monoid ((<>))
 import  Data.Text (Text, pack)
 import  GHC.Generics
 import Lib
+import Data.IORef
+
 
 
 data Transcript = Transcript
   { t :: String
   } deriving (Generic, Show)
 
-instance ToJSON Transcript
+data NewReplaceCommand = NewReplaceCommand
+  { pattern :: String,
+    replacement :: String
+  } deriving (Generic, Show)
 
+instance ToJSON Transcript
 instance FromJSON Transcript
+
+instance ToJSON NewReplaceCommand
+instance FromJSON NewReplaceCommand
 
 type Api = SpockM () () () ()
 type ApiAction a = SpockAction () () () a
+
+commands = predefinedCommands
 
 main :: IO ()
 main =
@@ -33,4 +44,7 @@ app =
     do
        post root $ do
          theTranscript <- jsonBody' :: ApiAction Transcript
-         text (pack $ processTranscript $ t theTranscript)
+         text (pack $ (processTranscript commands) (t theTranscript))
+       post "add" $ do
+         theCommand <- jsonBody' :: ApiAction NewReplaceCommand
+         text ("ok")

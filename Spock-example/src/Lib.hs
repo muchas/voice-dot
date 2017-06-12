@@ -1,5 +1,16 @@
 module Lib
-    ( processTranscript
+    ( processTranscript,
+      addCustomReplaceCommand,
+      spacesJoin,
+      predefinedCommands,
+      makeReplaceCommand,
+      matchCommand,
+      toggleIgnore,
+      removeFromBuffer,
+      getProcessedBuffer,
+      Context(..),
+      Command(..),
+      Invocation(..),
     ) where
 
 import Data.List
@@ -19,6 +30,7 @@ data Context = Context
     { ignore :: Bool
     , parenthesis :: [String]
     } deriving Show
+
 
 
 type WordList = [String]
@@ -76,8 +88,11 @@ parens = [("(", ")"), ("[", "]"), ("{", "}")]
 replaceMapping = [("kropka", "."), ("wykrzyknik", "!"), ("otwórz nawias", "("),
                  ("zamknij nawias", ")"), ("znak zapytania", "?")]
 
-commands = (makeReplaceCommand <$> replaceMapping) ++ [makeIgnoreCommand]
+predefinedCommands = (makeReplaceCommand <$> replaceMapping) ++ [makeIgnoreCommand]
         -- ++ (makeCloseParenCommand (\x -> snd x) parens) ++ (makeOpenParenCommand (\x -> fst x) parens)
 
-processTranscript :: Transcript -> Transcript
-processTranscript t = spacesJoin $ processCommands commands (Context False []) (words t) [] []
+addCustomReplaceCommand commands (pattern, replacement) =
+   commands ++ [makeReplaceCommand (pattern, replacement)]
+
+processTranscript :: [Command] -> Transcript -> Transcript
+processTranscript commands t = spacesJoin $ processCommands commands (Context False []) (words t) [] []
