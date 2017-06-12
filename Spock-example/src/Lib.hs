@@ -2,8 +2,6 @@ module Lib
     ( processTranscript
     ) where
 
--- someFunc :: IO ()
--- someFunc = putStrLn "someFunc"
 import Data.List
 import Data.List.Utils
 
@@ -23,68 +21,63 @@ data Context = Context
     } deriving Show
 
 
+type WordList = [String]
+type Buffer = [String]
+type Transcript = String
+
+spacesJoin = intercalate " "
+
 toggleIgnore :: Context -> Context
 toggleIgnore (Context ignore parens) = Context (not ignore) parens
 
-
-ignoreCmd = Command "ignoruj" (\t c -> if not (ignore c)
-                                      then Invocation "" (toggleIgnore c)
-                                      else Invocation "ignoruj" (toggleIgnore c))
-
-replaceCmd pattern replacement =
-    Command pattern (\t c -> if not (ignore c)
-                              then Invocation replacement (Context False (parenthesis c))
-                              else Invocation pattern (Context False (parenthesis c)))
-
-dotCmd = replaceCmd "kropka" "."
-exclamationMarkCmd = replaceCmd "wykrzyknik" "!"
-openParenthesisCmd = replaceCmd "otworz nawias" "("
-closeParenthesisCmd = replaceCmd "zamknij nawias" ")"
-questionMarkCmd = replaceCmd "znak zapytania" "?"
-
-fitCommand :: [Command] -> String -> Maybe Command
-fitCommand commands "" = Nothing
-fitCommand [] _ = Nothing
-fitCommand (c:cs) value =
+-- to jest otworz nawias  <-- otworz nawias to komenda
+matchCommand :: [Command] -> String -> Maybe Command
+matchCommand commands "" = Nothing
+matchCommand [] _ = Nothing
+matchCommand (c:cs) value =
   if endswith (pattern c) value
   then Just c
-  else fitCommand cs value
+  else matchCommand cs value
 
+removeFromBuffer :: Buffer -> String -> Buffer
+removeFromBuffer ws toReplace =  words $ replace toReplace "" $ spacesJoin ws
 
-transform :: [String] -> String -> [String]
-transform ws toReplace =  words $ replace toReplace "" $ intercalate " " ws
+getProcessedBuffer :: Buffer -> Command -> Invocation -> Buffer
+getProcessedBuffer acc cmd inv = removeFromBuffer acc (pattern cmd) ++ words (output inv)
 
-
-processCommands :: [Command] -> Context -> [String] -> [String] -> [String] -> [String]
+processCommands :: [Command] -> Context -> WordList -> Buffer -> Buffer -> WordList
 processCommands commands ctx [] lAcc rAcc = rAcc ++ lAcc
 processCommands commands ctx (w:ws) lAcc rAcc =
-      let mCmd = fitCommand commands (intercalate " " (lAcc ++ [w]))
-      in case mCmd of
-       Just cmd -> processCommands commands (context inv) ws [] (rAcc ++ (transform (lAcc ++ [w]) (pattern cmd) ++ words (output inv) ))
-                  where inv = execute cmd "" ctx
-       Nothing -> processCommands commands ctx ws (lAcc ++ [w]) rAcc
+      let acc = lAcc ++ [w]
+      in case matchCommand commands (spacesJoin acc) of
+         Just cmd -> processCommands commands (context inv) ws [] (rAcc ++ getProcessedBuffer acc cmd inv)
+                     where inv = execute cmd "" ctx
+         Nothing -> processCommands commands ctx ws acc rAcc
 
 
--- processCommands [replaceCmd, ignoreCmd] ["To", "jest", "kropka"] []
---
+makeIgnoreCommand = Command "ignoruj" (\t c -> if not (ignore c)
+                                             then Invocation "" (toggleIgnore c)
+                                             else Invocation "ignoruj" (toggleIgnore c))
 
--- parse :: [Command] -> String -> Maybe Command
--- parse commands transcript =
---   find (\cmd -> pattern cmd == cmdName) commands
+-- makeOpenParenCommand pattern leftParen =
+--     Command pattern (\t c -> if not (ignore c)
+--                              then Invocation leftParen (Context False (parenthesis c ++ [leftParen])) )
+-- makeCloseParenCommand pattern rightParen =
+--     Command pattern (\t c -> if not (ignore c)
+--                              then
 
---
--- replaceDot = replaceCommand "kropka" "."
+makeReplaceCommand (pattern, replacement) =
+   Command pattern (\t c -> if not (ignore c)
+                            then Invocation replacement (Context False (parenthesis c))
+                            else Invocation pattern (Context False (parenthesis c)))
 
-cmds = [dotCmd, exclamationMarkCmd, openParenthesisCmd,
-        closeParenthesisCmd, questionMarkCmd, ignoreCmd]
+parens = [("(", ")"), ("[", "]"), ("{", "}")]
 
+replaceMapping = [("kropka", "."), ("wykrzyknik", "!"), ("otwórz nawias", "("),
+                 ("zamknij nawias", ")"), ("znak zapytania", "?")]
 
+commands = (makeReplaceCommand <$> replaceMapping) ++ [makeIgnoreCommand]
+        -- ++ (makeCloseParenCommand (\x -> snd x) parens) ++ (makeOpenParenCommand (\x -> fst x) parens)
 
-processTranscript :: String -> String
-processTranscript t = intercalate " " $ processCommands cmds (Context False []) (words t) [] []
-
-
---
--- executeCommand :: String -> String
--- executeCommand (ReplaceCommand s) = s
--- executeCommand (IgnoreCommand) = words
+processTranscript :: Transcript -> Transcript
+processTranscript t = spacesJoin $ processCommands commands (Context False []) (words t) [] []
