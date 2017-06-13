@@ -80,11 +80,13 @@ useIgnore text ctx invocation =
                       then invocation
                       else Invocation text (Context False (parenthesis ctx))
 
-makeIgnoreCommand =
-  Command "ignoruj" (\t ctx -> useIgnore "ignoruj" ctx (Invocation "" (toggleIgnore ctx)))
-
 makeGenericCommand pattern getInvocation =
   Command pattern (\t ctx -> useIgnore pattern ctx (getInvocation ctx))
+
+makeIgnoreCommand =
+  makeGenericCommand
+    "ignoruj"
+    (\ctx -> Invocation "" (toggleIgnore ctx))
 
 makeOpenParenCommand (pattern, leftParen) =
   makeGenericCommand
