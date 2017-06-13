@@ -32,10 +32,17 @@ data Context = Context
     } deriving Show
 
 
-
 type WordList = [String]
 type Buffer = [String]
 type Transcript = String
+
+
+leftParens = ["(", "[", "{"]
+leftParenNames = ["nawias okrągły", "nawias kwadratowy", "nawias klamrowy"]
+rightParens = [")", "]", "}"]
+parens = zip leftParens rightParens
+leftParensMapping = zip leftParenNames leftParens
+replaceMapping = [("kropka", "."), ("wykrzyknik", "!"), ("znak zapytania", "?")]
 
 spacesJoin = intercalate " "
 
@@ -67,29 +74,44 @@ processCommands commands ctx (w:ws) lAcc rAcc =
          Nothing -> processCommands commands ctx ws acc rAcc
 
 
-makeIgnoreCommand = Command "ignoruj" (\t c -> if not (ignore c)
-                                             then Invocation "" (toggleIgnore c)
-                                             else Invocation "ignoruj" (toggleIgnore c))
+useIgnore :: String -> Context -> Invocation -> Invocation
+useIgnore text ctx invocation =
+                      if not (ignore ctx)
+                      then invocation
+                      else Invocation text (Context False (parenthesis ctx))
 
--- makeOpenParenCommand pattern leftParen =
---     Command pattern (\t c -> if not (ignore c)
---                              then Invocation leftParen (Context False (parenthesis c ++ [leftParen])) )
--- makeCloseParenCommand pattern rightParen =
---     Command pattern (\t c -> if not (ignore c)
---                              then
+makeIgnoreCommand =
+  Command "ignoruj" (\t ctx -> useIgnore "ignoruj" ctx (Invocation "" (toggleIgnore ctx)))
 
-makeReplaceCommand (pattern, replacement) =
-   Command pattern (\t c -> if not (ignore c)
-                            then Invocation replacement (Context False (parenthesis c))
-                            else Invocation pattern (Context False (parenthesis c)))
+makeGenericCommand pattern getInvocation =
+  Command pattern (\t ctx -> useIgnore pattern ctx (getInvocation ctx))
 
-parens = [("(", ")"), ("[", "]"), ("{", "}")]
+makeOpenParenCommand (pattern, leftParen) =
+  makeGenericCommand
+    pattern
+    (\ctx -> Invocation leftParen (Context False ((parenthesis ctx) ++ [leftParen])))
 
-replaceMapping = [("kropka", "."), ("wykrzyknik", "!"), ("otwórz nawias", "("),
-                 ("zamknij nawias", ")"), ("znak zapytania", "?")]
+matchRightParen parens leftParen =
+  let match = find (\x -> fst x == leftParen) parens
+  in case match of
+    Just (left, right) -> right
+    Nothing -> error "Could not match right paren!"
 
-predefinedCommands = (makeReplaceCommand <$> replaceMapping) ++ [makeIgnoreCommand]
-        -- ++ (makeCloseParenCommand (\x -> snd x) parens) ++ (makeOpenParenCommand (\x -> fst x) parens)
+makeCloseParenCommand =
+  makeGenericCommand
+  "zamknij nawias"
+  (\ctx ->
+      (let parensStack = parenthesis ctx
+      in if (not $ null parensStack)
+         then Invocation (matchRightParen parens (last parensStack)) (Context (ignore ctx) (init (parenthesis ctx)))
+         else Invocation "zamknij nawias" ctx))
+
+makeReplaceCommand (pattern, text) =
+  makeGenericCommand pattern (\c -> Invocation text (Context False (parenthesis c)))
+
+predefinedCommands = (makeReplaceCommand <$> replaceMapping)
+        ++ (makeOpenParenCommand <$> leftParensMapping)
+        ++ [makeIgnoreCommand, makeCloseParenCommand]
 
 addCustomReplaceCommand commands (pattern, replacement) =
    commands ++ [makeReplaceCommand (pattern, replacement)]
