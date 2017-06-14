@@ -13,7 +13,6 @@ import Lib
 import Data.IORef
 
 
-
 data Transcript = Transcript
   { t :: String
   } deriving (Generic, Show)
@@ -29,22 +28,26 @@ instance FromJSON Transcript
 instance ToJSON NewReplaceCommand
 instance FromJSON NewReplaceCommand
 
+-- data AppState = DummyAppState (IORef [Command])
 type Api = SpockM () () () ()
 type ApiAction a = SpockAction () () () a
 
-commands = predefinedCommands
 
 main :: IO ()
 main =
-    do spockCfg <- defaultSpockCfg () PCNoDatabase ()
+    do ref <- newIORef predefinedCommands
+       spockCfg <- defaultSpockCfg () PCNoDatabase ()
        runSpock 8080 (spock spockCfg app)
 
 app :: Api
 app =
     do
        post root $ do
+        --  (DummyAppState ref) <- getState
+        --  ioCmds <- readIORef ref
+        --  commands <- ioCmds
          theTranscript <- jsonBody' :: ApiAction Transcript
-         text (pack $ (processTranscript commands) (t theTranscript))
+         text (pack $ (processTranscript predefinedCommands) (t theTranscript))
        post "add" $ do
          theCommand <- jsonBody' :: ApiAction NewReplaceCommand
          text ("ok")

@@ -49,7 +49,6 @@ spacesJoin = intercalate " "
 toggleIgnore :: Context -> Context
 toggleIgnore (Context ignore parens) = Context (not ignore) parens
 
--- to jest otworz nawias  <-- otworz nawias to komenda
 matchCommand :: [Command] -> String -> Maybe Command
 matchCommand commands "" = Nothing
 matchCommand [] _ = Nothing

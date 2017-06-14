@@ -42,12 +42,12 @@ testProcessTranscript1 = TestCase (
                   (processTranscript predefinedCommands "Test kropka") "Test .")
 
 testProcessTranscript2 = TestCase (
-            assertEqual "for processTranscript otwórz nawias kropka"
-                  (processTranscript predefinedCommands  "Test otwórz nawias kropka") "Test ( .")
+            assertEqual "for processTranscript nawias kwadratowy kropka"
+                  (processTranscript predefinedCommands  "Test nawias kwadratowy kropka") "Test [ .")
 
 testProcessTranscript3 = TestCase (
             assertEqual "for processTranscript ignoruj"
-                  (processTranscript  predefinedCommands "Test ignoruj otwórz nawias otwórz nawias") "Test otwórz nawias (")
+                  (processTranscript  predefinedCommands "Test ignoruj nawias okrągły nawias okrągły") "Test nawias okrągły (")
 
 
 tests = TestList [TestLabel "spacesJoin1" testSpacesJoin1,
