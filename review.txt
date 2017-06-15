@@ -1,0 +1,14 @@
+
+Review kodu: https://github.com/apisarek/malus
+
+1. Kod zawiera zahardkodowane sciezki i ustawienia - mozna wyekstrahowac je do pliku z ustawieniami
+2. Wystepuja funkcje takie jak np. trainAndSaveNBModel, ktore skladaja sie z praktycznie samych instrukcji let.
+3. splitDataset uzywa dwukrotnie podobnego list comprehension, mozna bylo zastosowac zlozenie (map . filter) z funkcjami wyzszego rzedu
+4. Zastosowanie 'type' mogloby zwiekszyc czytelnosc przy deklaracji typow funkcji, na ten moment ciezej ocenic w jakim kontekscie np. String jest uzywany.
+5. Komentarze czasami powtarzaja tresc nazwy funkcji, zamiast tlumaczyc jej cel.
+
+
+6. Plusem sa deklaracje typow na poczatku modulu, jest to zgodne z konwencja definiowania kontraktu modulu.
+7. Duzy plus za czytelnosc nazw funkcji, kodu oraz uzycie w sensowny sposob funktorow aplikatywnych i zlozen.
+8. Plus za strukture projektu i logiczny podzial na czesc machine learningowa, webowa i do preprocesowania tekstu.
+
