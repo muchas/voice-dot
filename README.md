@@ -8,3 +8,12 @@ Moreover you can dynamically define your own commands. In order to ignore implem
 For now above functionality works only for polish language.
 
 Backend is written in Haskell with usage of Spock rest framework.
+
+
+Running backend:
+
+`cd backend`
+
+`stack build --fast`
+
+`stack exec Spock-example-exe`
