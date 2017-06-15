@@ -17,3 +17,10 @@ Running backend:
 `stack build --fast`
 
 `stack exec Spock-example-exe`
+
+
+Running tests:
+
+`cd backend`
+
+`stack test`
